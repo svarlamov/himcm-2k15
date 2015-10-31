@@ -1,4 +1,5 @@
 package models
+
 import "github.com/svarlamov/himcm2k15/utils"
 
 type LocationSeverities map[string]int64

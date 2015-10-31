@@ -6,16 +6,16 @@ import (
 )
 
 type RawCoefficients struct {
-	PrimaryDesc []string
+	PrimaryDesc   []string
 	SecondaryDesc []string
-	Coefficient []int64
+	Coefficient   []int64
 }
 
 func MakeRawCoefficients(rows [][]string) RawCoefficients {
 	raw := RawCoefficients{
-		PrimaryDesc: make([]string, len(rows)),
+		PrimaryDesc:   make([]string, len(rows)),
 		SecondaryDesc: make([]string, len(rows)),
-		Coefficient: make([]int64, len(rows)),
+		Coefficient:   make([]int64, len(rows)),
 	}
 	for i := 1; i < len(rows); i++ {
 		raw.PrimaryDesc[i] = rows[i][0]

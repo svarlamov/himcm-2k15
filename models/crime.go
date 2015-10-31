@@ -6,12 +6,13 @@ import (
 )
 
 type ScorerParameters struct {
-	DConst  int64
-	DCoeffs map[string]int64
+	DConst           int64
+	DCoeffs          map[string]int64
 	LocationSevConst int64
-	LocationSevs LocationSeverities
-	DomesticConst int64
-	ArrestedConst int64
+	LocationSevs     LocationSeverities
+	DomesticConst    int64
+	ArrestedConst    int64
+	XYValues         map[int64][2]int64
 }
 
 func (params *ScorerParameters) ScoreCrime(crime Crime) int64 {
@@ -34,15 +35,17 @@ func (params *ScorerParameters) ScoreCrime(crime Crime) int64 {
 }
 
 type Crime struct {
-	CaseId string
-	DateOfOcc string
-	PrimaryDesc string
+	CaseId        string
+	DateOfOcc     string
+	PrimaryDesc   string
 	SecondaryDesc string
-	LocationDesc string
-	Arrest bool
-	Domestic bool
-	Beat int64
-	Score int64
+	LocationDesc  string
+	Arrest        bool
+	Domestic      bool
+	Beat          int64
+	Score         int64
+	XPlotValue    int64
+	YPlotValue    int64
 }
 
 type Crimes []Crime
@@ -50,15 +53,16 @@ type Crimes []Crime
 func (crimes Crimes) ScoreCrimes(params *ScorerParameters) {
 	for ind, crime := range crimes {
 		crimes[ind].Score = params.ScoreCrime(crime)
+		crimes[ind].XPlotValue = params.XYValues[crimes[ind].Beat][0]
+		crimes[ind].YPlotValue = params.XYValues[crimes[ind].Beat][1]
 	}
 }
 
 func (crimes Crimes) MakeCSVStr() string {
-	rawExp := `"CASE #","DATE  OF OCCURRENCE","PRIMARY DESCRIPTION","SECONDARY DESCRIPTION","LOCATION DESCRIPTION","ARREST","DOMESTIC","BEAT","SCORE"`
-	rawExp += "\n"
+	rawExp := fmt.Sprintln(`"CASE #","DATE  OF OCCURRENCE","PRIMARY DESCRIPTION","SECONDARY DESCRIPTION","LOCATION DESCRIPTION","ARREST","DOMESTIC","BEAT","SCORE","X PLOT VALUE","Y PLOT VALUE"`)
 	for ind, crime := range crimes {
-		rawExp += fmt.Sprint(`"`, crime.CaseId, `"`, ",", `"`, crime.DateOfOcc, `"`, ",", `"`, crime.PrimaryDesc, `"`, ",", `"`, crime.SecondaryDesc, `"`, ",", `"`, crime.LocationDesc, `"`, ",", `"`, crime.Arrest, `"`, ",", `"`, crime.Domestic, `"`, ",", `"`, crime.Beat, `"`, ",", `"`, crime.Score, `"`)
-		if ind < len(crimes) - 1 {
+		rawExp += fmt.Sprint(`"`, crime.CaseId, `"`, ",", `"`, crime.DateOfOcc, `"`, ",", `"`, crime.PrimaryDesc, `"`, ",", `"`, crime.SecondaryDesc, `"`, ",", `"`, crime.LocationDesc, `"`, ",", `"`, crime.Arrest, `"`, ",", `"`, crime.Domestic, `"`, ",", `"`, crime.Beat, `"`, ",", `"`, crime.Score, `"`, ",", `"`, crime.XPlotValue, `"`, ",", `"`, crime.YPlotValue, `"`)
+		if ind < len(crimes)-1 {
 			rawExp += "\n"
 		}
 	}
@@ -66,7 +70,7 @@ func (crimes Crimes) MakeCSVStr() string {
 }
 
 func MarshalCrimes(raw [][]string) Crimes {
-	crimes := make(Crimes, len(raw) - 1)
+	crimes := make(Crimes, len(raw)-1)
 	for ind, row := range raw {
 		if ind == 0 {
 			continue
@@ -79,7 +83,7 @@ func MarshalCrimes(raw [][]string) Crimes {
 		crimes[ind].LocationDesc = row[4]
 		tempDidArrest := row[5]
 		if tempDidArrest == "Y" {
-			crimes[ind].Arrest  = true
+			crimes[ind].Arrest = true
 		} else if tempDidArrest == "N" {
 			crimes[ind].Arrest = false
 		} else {
@@ -87,7 +91,7 @@ func MarshalCrimes(raw [][]string) Crimes {
 		}
 		tempWasDom := row[6]
 		if tempWasDom == "Y" {
-			crimes[ind].Domestic  = true
+			crimes[ind].Domestic = true
 		} else if tempWasDom == "N" {
 			crimes[ind].Domestic = false
 		} else {
