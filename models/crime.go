@@ -8,6 +8,10 @@ import (
 type ScorerParameters struct {
 	DConst  int64
 	DCoeffs map[string]int64
+	LocationSevConst int64
+	LocationSevs LocationSeverities
+	DomesticConst int64
+	ArrestedConst int64
 }
 
 func (params *ScorerParameters) ScoreCrime(crime Crime) int64 {
@@ -16,7 +20,16 @@ func (params *ScorerParameters) ScoreCrime(crime Crime) int64 {
 		fmt.Println(fmt.Sprintf("%s - %s", crime.PrimaryDesc, crime.SecondaryDesc))
 		panic(fmt.Sprintln("Could not find coefficient for,", crime.PrimaryDesc, "and", crime.SecondaryDesc))
 	}
-	score := params.DConst * dCoeff
+	locSev := params.LocationSevs[crime.LocationDesc]
+	var arrestedCoeff int64 = 0
+	if crime.Arrest == true {
+		arrestedCoeff = 1
+	}
+	var domesticCoeff int64 = 0
+	if crime.Domestic != true {
+		domesticCoeff = 1
+	}
+	score := (params.DConst * dCoeff) + (params.LocationSevConst + locSev) + (params.ArrestedConst * arrestedCoeff) + (params.DomesticConst * domesticCoeff)
 	return score
 }
 

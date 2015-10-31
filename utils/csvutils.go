@@ -23,3 +23,8 @@ func ParseCSVFile(fileToParse string) ([][]string, error) {
 
 	return rawCSVdata, err
 }
+
+func WriteCSVToFile(fileName string) error {
+
+	return nil
+}

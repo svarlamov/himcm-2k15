@@ -15,12 +15,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	locationsSevsSet, err := utils.ParseCSVFile("./resources/location_severities.csv")
+	if err != nil {
+		panic(err)
+	}
 	rawCoeffs := models.MakeRawCoefficients(coefficientSet)
 	dCoeffs := rawCoeffs.ConvertToMap()
+	locationSevs := models.MakeLocationSeverities(locationsSevsSet)
 	crimes := models.MarshalCrimes(masterSet)
 	params := models.ScorerParameters{
-		DConst: 1,
+		DConst: 70,
 		DCoeffs: dCoeffs,
+		LocationSevConst: 20,
+		LocationSevs: locationSevs,
+		DomesticConst: 5,
+		ArrestedConst: 5,
 	}
 	crimes.ScoreCrimes(&params)
 	fmt.Println(crimes.MakeCSVStr())
