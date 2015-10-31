@@ -24,7 +24,11 @@ func ParseCSVFile(fileToParse string) ([][]string, error) {
 	return rawCSVdata, err
 }
 
-func WriteCSVToFile(fileName string) error {
-
-	return nil
+func WriteCSVToFile(filePath string, contents string) {
+	f, err := os.Create(filePath)
+	defer f.Close()
+	if err != nil {
+		panic(err)
+	}
+	f.WriteString(contents)
 }

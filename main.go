@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/svarlamov/himcm2k15/utils"
 	"github.com/svarlamov/himcm2k15/models"
-	"fmt"
 )
 
 func main() {
@@ -32,5 +31,5 @@ func main() {
 		ArrestedConst: 5,
 	}
 	crimes.ScoreCrimes(&params)
-	fmt.Println(crimes.MakeCSVStr())
+	utils.WriteCSVToFile("./resources/output.csv", crimes.MakeCSVStr())
 }

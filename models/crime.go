@@ -54,9 +54,10 @@ func (crimes Crimes) ScoreCrimes(params *ScorerParameters) {
 }
 
 func (crimes Crimes) MakeCSVStr() string {
-	rawExp := "CASE #,DATE  OF OCCURRENCE, PRIMARY DESCRIPTION, SECONDARY DESCRIPTION, LOCATION DESCRIPTION,ARREST,DOMESTIC,BEAT,SCORE\n"
+	rawExp := `"CASE #","DATE  OF OCCURRENCE","PRIMARY DESCRIPTION","SECONDARY DESCRIPTION","LOCATION DESCRIPTION","ARREST","DOMESTIC","BEAT","SCORE"`
+	rawExp += "\n"
 	for ind, crime := range crimes {
-		rawExp += fmt.Sprint(crime.CaseId, ",", crime.DateOfOcc, ",", crime.PrimaryDesc, ",", crime.SecondaryDesc, ",", crime.LocationDesc, ",", crime.Arrest, ",", crime.Domestic, ",", crime.Beat, ",", crime.Score)
+		rawExp += fmt.Sprint(`"`, crime.CaseId, `"`, ",", `"`, crime.DateOfOcc, `"`, ",", `"`, crime.PrimaryDesc, `"`, ",", `"`, crime.SecondaryDesc, `"`, ",", `"`, crime.LocationDesc, `"`, ",", `"`, crime.Arrest, `"`, ",", `"`, crime.Domestic, `"`, ",", `"`, crime.Beat, `"`, ",", `"`, crime.Score, `"`)
 		if ind < len(crimes) - 1 {
 			rawExp += "\n"
 		}
