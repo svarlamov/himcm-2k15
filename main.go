@@ -46,6 +46,8 @@ func main() {
 	}
 	crimes.ScoreCrimes(&params)
 	utils.WriteCSVToFile("./resources/output.csv", crimes.MakeCSVStr())
-	perDistrictPerRange := crimes.GetSumsPerDistrictPerRange(&params)
+	perDistrictPerRange := crimes.GetSumsPerDistrictPerRange()
 	utils.WriteCSVToFile("./resources/crimes_per_dist_per_range.csv", models.MakeSumsPerDistrictPerRangeCSV(perDistrictPerRange))
+	sumsPerRange := crimes.GetSumsPerRange()
+	utils.WriteCSVToFile("./resources/sums_per_range.csv", models.MakeSumsPerRangeCSV(sumsPerRange))
 }

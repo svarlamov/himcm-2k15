@@ -123,31 +123,40 @@ func MarshalCrimes(raw [][]string) Crimes {
 	return crimes
 }
 
-func (crimes Crimes) GetSumsPerDistrictPerRange(params *ScorerParameters) map[int64][24]int64 {
-	sumsPerDistPerRange := make(map[int64][24]int64)
-	notCounted := 0
+func (crimes Crimes) GetSumsPerDistrictPerRange() map[string]int64 {
+	sumsPerDistPerRange := make(map[string]int64)
 	for _, crime := range crimes {
 		if crime.RangeIndex < 0 {
-			notCounted++
 			continue
 		}
-		tmp := sumsPerDistPerRange[crime.District]
-		tmp[crime.RangeIndex]++
-		sumsPerDistPerRange[crime.District] = tmp
+		sumsPerDistPerRange[fmt.Sprint(crime.District, ",", crime.RangeIndex)]++
 	}
-	fmt.Println("Silently not counting an invalid range", notCounted, "times")
 	return sumsPerDistPerRange
 }
 
-func MakeSumsPerDistrictPerRangeCSV(data map[int64][24]int64) string {
+func (crimes Crimes) GetSumsPerRange() []int64 {
+	sums := make([]int64, 24)
+	for _, crime := range crimes {
+		if crime.RangeIndex < 0 {
+			continue
+		}
+		sums[crime.RangeIndex]++
+	}
+	return sums
+}
+
+func MakeSumsPerRangeCSV(data []int64) string {
+	rawExp := fmt.Sprintln(`"RANGE","SUM"`)
+	for ind, sum := range data {
+		rawExp += fmt.Sprint(ind, ",", sum, "\n")
+	}
+	return rawExp
+}
+
+func MakeSumsPerDistrictPerRangeCSV(data map[string]int64) string {
 	rawExp := fmt.Sprintln(`"DISTRICT","RANGE","SUM"`)
-	for ind, district := range data {
-		for innerInd, r := range district {
-			rawExp += fmt.Sprint(ind, ",", innerInd, ",", r)
-		}
-		if ind < int64(len(data)-1) {
-			rawExp += "\n"
-		}
+	for key, sum := range data {
+		rawExp += fmt.Sprint(key, ",", sum, "\n")
 	}
 	return rawExp
 }
