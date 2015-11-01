@@ -13,6 +13,7 @@ type ScorerParameters struct {
 	DomesticConst    int64
 	ArrestedConst    int64
 	XYValues         map[int64][2]int64
+	ScoreRanges      ScoreRanges
 }
 
 func (params *ScorerParameters) ScoreCrime(crime Crime) int64 {
@@ -46,22 +47,33 @@ type Crime struct {
 	Score         int64
 	XPlotValue    int64
 	YPlotValue    int64
+	District      int64
+	RangeIndex    int64
 }
 
 type Crimes []Crime
 
 func (crimes Crimes) ScoreCrimes(params *ScorerParameters) {
+	fmt.Println(params.ScoreRanges)
 	for ind, crime := range crimes {
 		crimes[ind].Score = params.ScoreCrime(crime)
 		crimes[ind].XPlotValue = params.XYValues[crimes[ind].Beat][0]
 		crimes[ind].YPlotValue = params.XYValues[crimes[ind].Beat][1]
+		// NOTE: -1 is a sentinel if a value does not fit within a valid range
+		crimes[ind].RangeIndex = -1
+		for innerInd, r := range params.ScoreRanges {
+			if crimes[ind].Score > r.Lower && crimes[ind].Score < r.Upper {
+				crimes[ind].RangeIndex = int64(innerInd)
+				break
+			}
+		}
 	}
 }
 
 func (crimes Crimes) MakeCSVStr() string {
-	rawExp := fmt.Sprintln(`"CASE #","DATE  OF OCCURRENCE","PRIMARY DESCRIPTION","SECONDARY DESCRIPTION","LOCATION DESCRIPTION","ARREST","DOMESTIC","BEAT","SCORE","X PLOT VALUE","Y PLOT VALUE"`)
+	rawExp := fmt.Sprintln(`"CASE #","DATE OF OCCURRENCE","PRIMARY DESCRIPTION","SECONDARY DESCRIPTION","LOCATION DESCRIPTION","ARREST","DOMESTIC","BEAT","X PLOT VALUE","Y PLOT VALUE","DISTRICT","RANGE INDEX","SCORE"`)
 	for ind, crime := range crimes {
-		rawExp += fmt.Sprint(`"`, crime.CaseId, `"`, ",", `"`, crime.DateOfOcc, `"`, ",", `"`, crime.PrimaryDesc, `"`, ",", `"`, crime.SecondaryDesc, `"`, ",", `"`, crime.LocationDesc, `"`, ",", `"`, crime.Arrest, `"`, ",", `"`, crime.Domestic, `"`, ",", `"`, crime.Beat, `"`, ",", `"`, crime.Score, `"`, ",", `"`, crime.XPlotValue, `"`, ",", `"`, crime.YPlotValue, `"`)
+		rawExp += fmt.Sprint(`"`, crime.CaseId, `"`, ",", `"`, crime.DateOfOcc, `"`, ",", `"`, crime.PrimaryDesc, `"`, ",", `"`, crime.SecondaryDesc, `"`, ",", `"`, crime.LocationDesc, `"`, ",", `"`, utils.BoolToYN(crime.Arrest), `"`, ",", `"`, utils.BoolToYN(crime.Domestic), `"`, ",", `"`, crime.Beat, `"`, ",", `"`, crime.XPlotValue, `"`, ",", `"`, crime.YPlotValue, `"`, ",", `"`, crime.District, `"`, ",", `"`, crime.RangeIndex, `"`, ",", `"`, crime.Score, `"`)
 		if ind < len(crimes)-1 {
 			rawExp += "\n"
 		}
@@ -82,22 +94,23 @@ func MarshalCrimes(raw [][]string) Crimes {
 		crimes[ind].SecondaryDesc = row[3]
 		crimes[ind].LocationDesc = row[4]
 		tempDidArrest := row[5]
-		if tempDidArrest == "Y" {
+		if tempDidArrest == "Y" || tempDidArrest == "TRUE" || tempDidArrest == "true" {
 			crimes[ind].Arrest = true
-		} else if tempDidArrest == "N" {
+		} else if tempDidArrest == "N" || tempDidArrest == "FALSE" || tempDidArrest == "false" {
 			crimes[ind].Arrest = false
 		} else {
 			panic(fmt.Sprintln("Could not find arrest value for,", tempDidArrest))
 		}
 		tempWasDom := row[6]
-		if tempWasDom == "Y" {
+		if tempWasDom == "Y" || tempWasDom == "TRUE" || tempWasDom == "true" {
 			crimes[ind].Domestic = true
-		} else if tempWasDom == "N" {
+		} else if tempWasDom == "N" || tempWasDom == "FALSE" || tempWasDom == "false" {
 			crimes[ind].Domestic = false
 		} else {
 			panic(fmt.Sprintln("Could not find arrest value for,", tempWasDom))
 		}
 		crimes[ind].Beat = utils.SToIP(row[7])
+		crimes[ind].District = utils.SToIP(row[8])
 		temp := fmt.Sprintln(crimes[ind].PrimaryDesc, crimes[ind].SecondaryDesc)
 		if len(temp) < 1 {
 			fmt.Println(crimes[ind].PrimaryDesc, crimes[ind].SecondaryDesc)
@@ -108,4 +121,33 @@ func MarshalCrimes(raw [][]string) Crimes {
 		}
 	}
 	return crimes
+}
+
+func (crimes Crimes) GetSumsPerDistrictPerRange(params *ScorerParameters) map[int64][24]int64 {
+	sumsPerDistPerRange := make(map[int64][24]int64)
+	notCounted := 0
+	for _, crime := range crimes {
+		if crime.RangeIndex < 0 {
+			notCounted++
+			continue
+		}
+		tmp := sumsPerDistPerRange[crime.District]
+		tmp[crime.RangeIndex]++
+		sumsPerDistPerRange[crime.District] = tmp
+	}
+	fmt.Println("Silently not counting an invalid range", notCounted, "times")
+	return sumsPerDistPerRange
+}
+
+func MakeSumsPerDistrictPerRangeCSV(data map[int64][24]int64) string {
+	rawExp := fmt.Sprintln(`"DISTRICT","RANGE","SUM"`)
+	for ind, district := range data {
+		for innerInd, r := range district {
+			rawExp += fmt.Sprint(ind, ",", innerInd, ",", r)
+		}
+		if ind < int64(len(data)-1) {
+			rawExp += "\n"
+		}
+	}
+	return rawExp
 }

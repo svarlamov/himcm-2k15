@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-	masterSet, err := utils.ParseCSVFile("./resources/master_set.csv")
+	masterSet, err := utils.ParseCSVFile("./resources/master_set_with_districts.csv")
 	if err != nil {
 		panic(err)
 	}
@@ -22,11 +22,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	rawScoreRanges, err := utils.ParseCSVFile("./resources/score_ranges.csv")
+	if err != nil {
+		panic(err)
+	}
 	xyVals := make(models.XYLookupTable)
 	xyVals.Populate(rawXYVals)
 	rawCoeffs := models.MakeRawCoefficients(coefficientSet)
 	dCoeffs := rawCoeffs.ConvertToMap()
 	locationSevs := models.MakeLocationSeverities(locationsSevsSet)
+	scoreRanges := make(models.ScoreRanges, len(rawScoreRanges)-1)
+	scoreRanges.Populate(rawScoreRanges)
 	crimes := models.MarshalCrimes(masterSet)
 	params := models.ScorerParameters{
 		DConst:           70,
@@ -36,7 +42,10 @@ func main() {
 		DomesticConst:    5,
 		ArrestedConst:    5,
 		XYValues:         xyVals,
+		ScoreRanges:      scoreRanges,
 	}
 	crimes.ScoreCrimes(&params)
 	utils.WriteCSVToFile("./resources/output.csv", crimes.MakeCSVStr())
+	perDistrictPerRange := crimes.GetSumsPerDistrictPerRange(&params)
+	utils.WriteCSVToFile("./resources/crimes_per_dist_per_range.csv", models.MakeSumsPerDistrictPerRangeCSV(perDistrictPerRange))
 }

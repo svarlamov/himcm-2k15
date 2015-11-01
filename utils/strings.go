@@ -9,3 +9,11 @@ func SToIP(s string) int64 {
 	}
 	return i
 }
+
+
+func BoolToYN(b bool) string {
+	if b == true {
+		return "Y"
+	}
+	return "N"
+}
